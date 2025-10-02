@@ -1,5 +1,5 @@
 // Serviço para integração com Nhonga.net
-const NHONGA_API_BASE = 'https://nhonga.net/api'
+const NHONGA_API_BASE = 'https://vendorapay.com/api'
 const API_KEY = '03gdpgmaoh6o46m7pqg3v8d6ggecik8p68dyou7zvvwvr8qjclms5mprowv9'
 const WEBHOOK_SECRET = 'hmthkoukhk5z47jul0nvys68h9ihyglykt43iokjtck0sn6nx37ghkd3qwlr5emo8zrx73nxbrmuvw0xukb8qidque9ztz7ru9uys2srvh8sc0ihukn0wsd0'
 
