@@ -228,7 +228,7 @@ const transactionUserMap = new Map()
  * @param {string} userId - UID do usuário
  * @param {string} userEmail - Email do usuário
  */
-export const registerTransactionUser = (transactionId, userId, userEmail) => {
+export const registerTransactionUser = async (transactionId, userId, userEmail) => {
   const transactionData = {
     userId,
     userEmail,
@@ -245,6 +245,30 @@ export const registerTransactionUser = (transactionId, userId, userEmail) => {
     localStorage.setItem('nhonga_transactions', JSON.stringify(existingTransactions))
   } catch (error) {
     console.error('Erro ao salvar transação no localStorage:', error)
+  }
+
+  // Registrar no servidor backend
+  try {
+    const baseUrl = SYSTEM_URLS.base
+    const response = await fetch(`${baseUrl}/api/register-transaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transactionId,
+        userId,
+        userEmail
+      })
+    })
+
+    if (response.ok) {
+      console.log('✅ Transação registrada no servidor backend')
+    } else {
+      console.warn('⚠️ Falha ao registrar transação no servidor backend')
+    }
+  } catch (error) {
+    console.error('❌ Erro ao registrar transação no servidor:', error)
   }
   
   console.log('Transação registrada:', { transactionId, userId, userEmail })

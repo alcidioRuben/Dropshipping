@@ -53,7 +53,7 @@ const Payment = () => {
       
       if (result.success) {
         // Registrar transação com usuário para identificação no webhook
-        registerTransactionUser(result.transactionId, currentUser.uid, currentUser.email)
+        await registerTransactionUser(result.transactionId, currentUser.uid, currentUser.email)
         
         // Redirecionar para o checkout da Nhonga.net
         window.location.href = result.redirectUrl
