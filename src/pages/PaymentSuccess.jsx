@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { getTransactionUser, getTransactionStatus, clearTransactionUser, clearOldTransactions } from '../services/nhonga'
+import { getTransactionUser, getTransactionStatus, clearTransactionUser, clearOldTransactions } from '../services/vendorapay'
 import metaPixelService from '../services/metaPixel'
 
 const PaymentSuccess = () => {

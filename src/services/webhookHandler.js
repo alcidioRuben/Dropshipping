@@ -1,5 +1,5 @@
 // Handler para webhooks da Nhonga.net
-import { processWebhook, verifyWebhookSignature } from './nhonga.js'
+import { processWebhook, verifyWebhookSignature } from ../services/vendorapay.js'
 import { updateUserProfile } from '../contexts/AuthContext.jsx'
 
 /**
