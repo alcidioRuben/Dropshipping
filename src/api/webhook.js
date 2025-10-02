@@ -1,13 +1,13 @@
-// Webhook handler para Nhonga.net
-import { processWebhook, verifyWebhookSignature, getTransactionUser, clearTransactionUser } from '../services/nhonga'
+// Webhook handler para vendorapay.com
+import { processWebhook, verifyWebhookSignature, getTransactionUser, clearTransactionUser } from '../services/vendorapay'
 import { updatePaymentFromWebhook } from '../contexts/AuthContext'
 
 /**
- * Handler para webhooks da Nhonga.net
+ * Handler para webhooks da vendorapay.com
  * @param {Object} req - Request object
  * @param {Object} res - Response object
  */
-export const nhongaWebhook = async (req, res) => {
+export const vendorapayWebhook = async (req, res) => {
   try {
     // Verificar método HTTP
     if (req.method !== 'POST') {
@@ -16,7 +16,7 @@ export const nhongaWebhook = async (req, res) => {
 
     // Obter dados do webhook
     const webhookData = req.body
-    const signature = req.headers['x-nhonga-signature'] || req.headers['x-signature']
+    const signature = req.headers['x-vendorapay-signature'] || req.headers['x-signature']
 
     console.log('Webhook recebido:', {
       data: webhookData,
@@ -52,7 +52,7 @@ export const nhongaWebhook = async (req, res) => {
         // Tentar obter usuário do mapeamento de transações
         const transactionUser = getTransactionUser(result.transactionId)
         
-        // Fallback: tentar extrair UID do webhook (se Nhonga.net enviar)
+        // Fallback: tentar extrair UID do webhook (se vendorapay.com enviar)
         const userId = transactionUser?.userId || webhookData.userId || webhookData.uid
         
         if (userId) {
@@ -133,9 +133,9 @@ export const checkPaymentStatus = async (req, res) => {
       return res.status(400).json({ error: 'Transaction ID is required' })
     }
 
-    // Verificar status na API do Nhonga.net
+    // Verificar status na API do vendorapay.com
     try {
-      const { getTransactionStatus } = await import('../services/nhonga')
+      const { getTransactionStatus } = await import('../services/vendorapay')
       const statusResult = await getTransactionStatus(transactionId)
       
       if (statusResult.success) {
@@ -144,7 +144,7 @@ export const checkPaymentStatus = async (req, res) => {
           transactionId,
           status: statusResult.status,
           data: statusResult.data,
-          message: 'Payment status retrieved from Nhonga.net'
+          message: 'Payment status retrieved from vendorapay.com'
         })
       } else {
         res.status(400).json({
@@ -154,10 +154,10 @@ export const checkPaymentStatus = async (req, res) => {
         })
       }
     } catch (apiError) {
-      console.error('Erro ao consultar API Nhonga.net:', apiError)
+      console.error('Erro ao consultar API vendorapay.com:', apiError)
       res.status(500).json({
         success: false,
-        error: 'Failed to check payment status with Nhonga.net',
+        error: 'Failed to check payment status with vendorapay.com',
         message: apiError.message
       })
     }
@@ -186,10 +186,10 @@ export const checkUserPendingTransactions = async (req, res) => {
 
     // Verificar transações pendentes do usuário
     try {
-      const { getTransactionUser } = await import('../services/nhonga')
+      const { getTransactionUser } = await import('../services/vendorapay')
       
       // Buscar todas as transações do localStorage
-      const existingTransactions = JSON.parse(localStorage.getItem('nhonga_transactions') || '{}')
+      const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
       const userTransactions = Object.entries(existingTransactions).filter(
         ([_, data]) => data.userId === userId
       )
@@ -222,7 +222,7 @@ export const checkUserPendingTransactions = async (req, res) => {
 }
 
 export default {
-  nhongaWebhook,
+  vendorapayWebhook,
   checkPaymentStatus,
   checkUserPendingTransactions
 }

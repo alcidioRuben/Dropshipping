@@ -99,7 +99,7 @@ const updatePaymentFromWebhook = async (userId, paymentData) => {
     const updateData = {
       isPaid: true,
       paymentDate: new Date(),
-      paymentMethod: 'nhonga',
+      paymentMethod: 'vendorapay',
       paymentAmount: paymentData.amount,
       transactionId: paymentData.transactionId,
       currency: paymentData.currency || 'MZN'
@@ -117,8 +117,8 @@ const updatePaymentFromWebhook = async (userId, paymentData) => {
 
 // API Routes
 
-// Webhook da Nhonga.net
-app.post('/api/webhook/nhonga', async (req, res) => {
+// Webhook da vendorapay.com
+app.post('/api/webhook/vendorapay', async (req, res) => {
   try {
     console.log('Webhook recebido:', {
       body: req.body,
@@ -126,7 +126,7 @@ app.post('/api/webhook/nhonga', async (req, res) => {
     });
 
     const webhookData = req.body;
-    const signature = req.headers['x-nhonga-signature'] || req.headers['x-signature'];
+    const signature = req.headers['x-vendorapay-signature'] || req.headers['x-signature'];
 
     // Verificar assinatura (opcional para desenvolvimento)
     if (signature && !verifyWebhookSignature(JSON.stringify(webhookData), signature)) {
@@ -276,7 +276,7 @@ app.get('*', (req, res) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/webhook/nhonga`);
+  console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/webhook/vendorapay`);
   console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
 });
 

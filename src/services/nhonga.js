@@ -1,5 +1,5 @@
-// Serviço para integração com Nhonga.net
-const NHONGA_API_BASE = 'https://vendorapay.com/api'
+// Serviço para integração com vendorapay.com
+const VENDORAPAY_API_BASE = 'https://vendorapay.com/api'
 const API_KEY = '03gdpgmaoh6o46m7pqg3v8d6ggecik8p68dyou7zvvwvr8qjclms5mprowv9'
 const WEBHOOK_SECRET = 'hmthkoukhk5z47jul0nvys68h9ihyglykt43iokjtck0sn6nx37ghkd3qwlr5emo8zrx73nxbrmuvw0xukb8qidque9ztz7ru9uys2srvh8sc0ihukn0wsd0'
 
@@ -34,7 +34,7 @@ export const createPayment = async (paymentData) => {
       ...(paymentData.userEmail && { userEmail: paymentData.userEmail })
     }
 
-    const response = await fetch(`${NHONGA_API_BASE}/payment/create`, {
+    const response = await fetch(`${VENDORAPAY_API_BASE}/payment/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export const createPayment = async (paymentData) => {
  */
 export const getTransactionStatus = async (transactionId) => {
   try {
-    const response = await fetch(`${NHONGA_API_BASE}/payment/status/${transactionId}`, {
+    const response = await fetch(`${VENDORAPAY_API_BASE}/payment/status/${transactionId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
@@ -190,7 +190,7 @@ export const toCents = (value) => {
 export const COURSE_CONFIG = {
   name: 'Curso Completo de Dropshipping',
   description: 'Aprenda dropshipping do zero e comece a faturar online',
-  amount: 299, // 299 MZN (valor direto para Nhonga.net)
+  amount: 299, // 299 MZN (valor direto para vendorapay.com)
   currency: 'MZN',
   amountMZN: 299 // 299 MZN
 }
@@ -204,7 +204,7 @@ export const SYSTEM_URLS = {
     : 'http://localhost:3000',
   
   get callbackUrl() {
-    return `${this.base}/api/webhook/nhonga`
+    return `${this.base}/api/webhook/vendorapay`
   },
   
   get returnUrl() {
@@ -240,9 +240,9 @@ export const registerTransactionUser = async (transactionId, userId, userEmail) 
   
   // Armazenar no localStorage como backup
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('nhonga_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
     existingTransactions[transactionId] = transactionData
-    localStorage.setItem('nhonga_transactions', JSON.stringify(existingTransactions))
+    localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
   } catch (error) {
     console.error('Erro ao salvar transação no localStorage:', error)
   }
@@ -286,7 +286,7 @@ export const getTransactionUser = (transactionId) => {
   // Se não encontrar na memória, tentar do localStorage
   if (!transactionData) {
     try {
-      const existingTransactions = JSON.parse(localStorage.getItem('nhonga_transactions') || '{}')
+      const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
       transactionData = existingTransactions[transactionId]
       
       // Se encontrar no localStorage, restaurar na memória
@@ -311,9 +311,9 @@ export const clearTransactionUser = (transactionId) => {
   
   // Remover do localStorage
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('nhonga_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
     delete existingTransactions[transactionId]
-    localStorage.setItem('nhonga_transactions', JSON.stringify(existingTransactions))
+    localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
   } catch (error) {
     console.error('Erro ao limpar transação do localStorage:', error)
   }
@@ -324,7 +324,7 @@ export const clearTransactionUser = (transactionId) => {
  */
 export const clearOldTransactions = () => {
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('nhonga_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     
     let cleanedCount = 0
@@ -338,7 +338,7 @@ export const clearOldTransactions = () => {
     })
     
     if (cleanedCount > 0) {
-      localStorage.setItem('nhonga_transactions', JSON.stringify(existingTransactions))
+      localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
       console.log(`🧹 Limpeza: ${cleanedCount} transações antigas removidas`)
     }
   } catch (error) {

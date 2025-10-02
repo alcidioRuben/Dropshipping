@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { createPayment, COURSE_CONFIG, SYSTEM_URLS, formatAmount, registerTransactionUser } from '../services/nhonga'
+import { createPayment, COURSE_CONFIG, SYSTEM_URLS, formatAmount, registerTransactionUser } from '../services/vendorapay'
 import { ButtonSpinner } from '../components/LoadingSpinner'
 import BotaoCTA from '../components/BotaoCTA'
 import metaPixelService from '../services/metaPixel'
@@ -36,7 +36,7 @@ const Payment = () => {
     setError('')
 
     try {
-      // Pagamento via Nhonga.net
+      // Pagamento via vendorapay.com
       const paymentData = {
         amount: COURSE_CONFIG.amount, // 299 MZN (valor direto)
         context: COURSE_CONFIG.description,
@@ -55,7 +55,7 @@ const Payment = () => {
         // Registrar transação com usuário para identificação no webhook
         await registerTransactionUser(result.transactionId, currentUser.uid, currentUser.email)
         
-        // Redirecionar para o checkout da Nhonga.net
+        // Redirecionar para o checkout da vendorapay.com
         window.location.href = result.redirectUrl
       } else {
         setError(result.error || 'Erro ao criar pagamento. Tente novamente.')

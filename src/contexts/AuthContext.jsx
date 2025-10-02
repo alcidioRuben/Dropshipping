@@ -359,7 +359,7 @@ export const AuthProvider = ({ children }) => {
       const updateData = {
         isPaid: true,
         paymentDate: new Date(),
-        paymentMethod: 'nhonga',
+        paymentMethod: 'vendorapay',
         paymentAmount: paymentData.amount,
         transactionId: paymentData.transactionId,
         currency: paymentData.currency || 'MZN'
