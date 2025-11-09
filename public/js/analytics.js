@@ -22,6 +22,29 @@ function trackEvent(category, action, label) {
     }
 }
 
+// Função para rastrear visualização de página
+function trackPageView() {
+    gtag('event', 'conversion', {
+        'send_to': 'AW-17497994749/hl6sCIivlKkbEP3r2JdB'
+    });
+    if (DEBUG) console.log('Analytics: Page view conversion tracked');
+}
+
+// Função para rastrear conversão com callback
+function gtag_report_conversion(url) {
+    var callback = function () {
+        if (typeof(url) != 'undefined') {
+            window.location = url;
+        }
+    };
+    gtag('event', 'conversion', {
+        'send_to': 'AW-17497994749/hl6sCIivlKkbEP3r2JdB',
+        'event_callback': callback
+    });
+    if (DEBUG) console.log('Analytics: Conversion tracked');
+    return false;
+}
+
 // Adiciona verificação de conexão
 function checkAnalytics() {
     if (typeof gtag === 'function') {
