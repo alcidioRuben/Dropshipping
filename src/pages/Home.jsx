@@ -13,6 +13,39 @@ const Home = () => {
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
 
+  // Função auxiliar para converter ID do Google Drive em URL de imagem
+  const getDriveImageUrl = (fileId) => {
+    // Formato ideal para imagens do Google Drive: thumbnail com tamanho otimizado para perfil
+    // Usa formato w400-h400 para garantir qualidade e proporção quadrada (ideal para avatares)
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h400`;
+  };
+
+  // Função para tentar formatos alternativos em caso de erro
+  const handleImageError = (e, fileId) => {
+    const currentSrc = e.target.src;
+    
+    // Tentar diferentes formatos do Google Drive
+    if (currentSrc.includes('thumbnail')) {
+      // Se thumbnail falhar, tentar formato de visualização
+      e.target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    } else if (currentSrc.includes('uc?export=view')) {
+      // Se visualização falhar, tentar formato de download
+      e.target.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    } else {
+      // Se tudo falhar, usar placeholder com inicial do nome
+      const parent = e.target.parentElement;
+      const name = parent?.nextElementSibling?.querySelector('h3')?.textContent || 'U';
+      e.target.style.display = 'none';
+      if (parent) {
+        parent.innerHTML = `
+          <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mr-4">
+            <span class="text-white font-bold text-lg">${name.charAt(0)}</span>
+          </div>
+        `;
+      }
+    }
+  };
+
   // Simular carregamento rápido da página
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,44 +143,58 @@ const Home = () => {
   const testimonials = [
     {
       name: "João Silva",
-      role: "Empreendedor",
+      role: "Estudante",
       content: "Transformei minha vida financeira com este curso. Em 2 semanas já estava lucrando!",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("1r0n08n6W4-vUMAB2M7GxWJmKLC5B4rW_"),
       rating: 5
     },
     {
       name: "Maria Santos",
-      role: "Mãe Solteira",
+      role: "Estudante",
       content: "Consegui criar uma renda extra trabalhando de casa. O curso é incrível!",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("19Zi5kAJBFrq7ztK9ETTPunSk7oqPQUxp"),
       rating: 5
     },
     {
       name: "Carlos Oliveira",
-      role: "Estudante",
+      role: "Emprendedor",
       content: "Melhor investimento que fiz. Em 2 semanas já estava diferente!",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("1o-WfFxJH7kS24J4saTLmkCWhVXUgJRi9"),
       rating: 5
     },
     {
       name: "Aisha Johnson",
-      role: "Empresária",
+      role: "Campones",
       content: "Como africana, este curso me deu oportunidades que nunca imaginei!",
-      image: "https://images.unsplash.com/photo-1589156191108-c762ff4b96ab?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("1l38B6EpVLYETbQfF0N-7J14KPRl2Tm-V"),
       rating: 5
     },
     {
       name: "Kwame Mensah",
       role: "Consultor",
       content: "Em 2 semanas minha perspectiva mudou completamente. Recomendo!",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("1vK23T1AM_77yTuelwn10lCtys-D1tQ9K"),
       rating: 5
     },
     {
-      name: "Fatima Diallo",
+      name: "Julio Diallo",
       role: "Designer",
       content: "O curso me permitiu trabalhar de casa e cuidar da família. Gratidão!",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+      image: getDriveImageUrl("1B3U_n-vFXfMULiEIDqdbYuuzW1xUrVvm"),
+      rating: 5
+    },
+    {
+      name: "Ana Costa",
+      role: "Aluna",
+      content: "Incrível como em pouco tempo consegui resultados reais. O suporte é excepcional!",
+      image: getDriveImageUrl("1KJe7Ab34Nkm4KLUK-wuJNRWadGJ6SNMT"),
+      rating: 5
+    },
+    {
+      name: "Pedro Mendes",
+      role: "Empreendedor",
+      content: "Melhor decisão que tomei. Hoje tenho minha própria loja online funcionando perfeitamente!",
+      image: getDriveImageUrl("1G1tkzdNaZxj12ruSoiREsEX2Ual9SJ5s"),
       rating: 5
     }
   ];
@@ -398,7 +445,7 @@ const Home = () => {
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
             onMouseEnter={() => metaPixelService.trackTestimonialView()}
           >
-            {allComments.slice(0, 6).map((testimonial, index) => (
+            {allComments.slice(0, 8).map((testimonial, index) => (
               <motion.div
                 key={testimonial.id || index}
                 initial={{ opacity: 0, y: 20 }}
@@ -422,7 +469,29 @@ const Home = () => {
                     <img
                       src={testimonial.image}
                       alt={testimonial.name}
-                      className="w-12 h-12 rounded-full object-cover mr-4"
+                      className="w-12 h-12 rounded-full object-cover mr-4 border-2 border-gray-200"
+                      onError={(e) => {
+                        // Extrair fileId da URL atual
+                        const fileIdMatch = e.target.src.match(/id=([^&]+)/);
+                        const fileId = fileIdMatch ? fileIdMatch[1] : null;
+                        
+                        if (fileId) {
+                          handleImageError(e, fileId);
+                        } else {
+                          // Se não conseguir extrair fileId, usar placeholder
+                          e.target.style.display = 'none';
+                          const parent = e.target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `
+                              <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mr-4">
+                                <span class="text-white font-bold text-lg">${testimonial.name.charAt(0)}</span>
+                              </div>
+                            `;
+                          }
+                        }
+                      }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
                     />
                   )}
                   <div>
@@ -664,7 +733,7 @@ const Home = () => {
 
       {/* Botão Flutuante do WhatsApp */}
       <motion.a
-        href="https://wa.me/25887400696"
+        href="https://wa.me/258874006962"
         target="_blank"
         rel="noopener noreferrer"
         initial={{ scale: 0 }}

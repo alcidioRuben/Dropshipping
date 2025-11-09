@@ -58,7 +58,7 @@ const Contato = () => {
         </svg>
       ),
       title: "Telefone",
-      value: "+258 84 000 0062",
+      value: "+258 84 1006962",
       link: "tel:+258841000062"
     },
     {
@@ -68,8 +68,8 @@ const Contato = () => {
         </svg>
       ),
       title: "Email",
-      value: "contato@lacasadigital.com",
-      link: "mailto:contato@lacasadigital.com"
+      value: "amsyncoficial@gmail.com",
+      link: "mailto:amsyncoficial@gmail.com"
     },
     {
       icon: (
@@ -357,7 +357,7 @@ const Contato = () => {
 
       {/* Botão Flutuante do WhatsApp */}
       <motion.a
-        href="https://wa.me/25887400696"
+        href="https://wa.me/258874006962"
         target="_blank"
         rel="noopener noreferrer"
         initial={{ scale: 0 }}

@@ -59,19 +59,35 @@ const verifyWebhookSignature = (payload, signature) => {
   return true;
 };
 
-// Função para processar webhook
+// Função para processar webhook da Paymoz
 const processWebhook = (webhookData) => {
   try {
-    const {
-      transactionId,
-      status,
-      amount,
-      currency,
-      context,
-      timestamp
-    } = webhookData;
-
-    const isApproved = status === 'approved' || status === 'completed';
+    // A estrutura do webhook da Paymoz pode variar
+    // Adaptar conforme a documentação real da Paymoz
+    const transactionId = webhookData.output_TransactionID || 
+                         webhookData.transactionId || 
+                         webhookData.transaction_id ||
+                         webhookData.dados?.output_TransactionID;
+    
+    const status = webhookData.status || 
+                   webhookData.output_ResponseCode || 
+                   webhookData.dados?.output_ResponseCode ||
+                   'unknown';
+    
+    const amount = webhookData.amount || 
+                  webhookData.valor || 
+                  webhookData.value ||
+                  webhookData.dados?.valor;
+    
+    const currency = webhookData.currency || 'MZN';
+    
+    // Verificar se o pagamento foi aprovado
+    // Paymoz retorna "INS-0" para sucesso
+    const isApproved = status === 'INS-0' || 
+                      status === 'approved' || 
+                      status === 'completed' ||
+                      webhookData.sucesso === true ||
+                      webhookData.dados?.output_ResponseCode === 'INS-0';
     
     return {
       success: true,
@@ -79,8 +95,8 @@ const processWebhook = (webhookData) => {
       status,
       amount,
       currency,
-      context,
-      timestamp,
+      context: webhookData.context || 'Curso de Dropshipping',
+      timestamp: webhookData.timestamp || new Date().toISOString(),
       isApproved,
       data: webhookData
     };
@@ -99,7 +115,7 @@ const updatePaymentFromWebhook = async (userId, paymentData) => {
     const updateData = {
       isPaid: true,
       paymentDate: new Date(),
-      paymentMethod: 'vendorapay',
+      paymentMethod: 'paymoz',
       paymentAmount: paymentData.amount,
       transactionId: paymentData.transactionId,
       currency: paymentData.currency || 'MZN'
@@ -117,8 +133,8 @@ const updatePaymentFromWebhook = async (userId, paymentData) => {
 
 // API Routes
 
-// Webhook da vendorapay.com
-app.post('/api/webhook/vendorapay', async (req, res) => {
+// Webhook da Paymoz (M-Pesa)
+app.post('/api/webhook/paymoz', async (req, res) => {
   try {
     console.log('Webhook recebido:', {
       body: req.body,
@@ -126,7 +142,9 @@ app.post('/api/webhook/vendorapay', async (req, res) => {
     });
 
     const webhookData = req.body;
-    const signature = req.headers['x-vendorapay-signature'] || req.headers['x-signature'];
+    const signature = req.headers['x-paymoz-signature'] || 
+                     req.headers['x-signature'] || 
+                     req.headers['authorization'];
 
     // Verificar assinatura (opcional para desenvolvimento)
     if (signature && !verifyWebhookSignature(JSON.stringify(webhookData), signature)) {

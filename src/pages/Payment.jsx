@@ -13,6 +13,7 @@ const Payment = () => {
   const { currentUser, userProfile } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
 
   // Verificar se o usuário já pagou e redirecionar para recursos
   useEffect(() => {
@@ -35,18 +36,28 @@ const Payment = () => {
     setIsProcessing(true)
     setError('')
 
+    // Validar número de celular
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      setError('Por favor, informe o seu número de celular para processar o pagamento via M-Pesa')
+      setIsProcessing(false)
+      return
+    }
+
+    // Validar formato do número (deve ter pelo menos 9 dígitos)
+    const cleanPhone = phoneNumber.replace(/\D/g, '')
+    if (cleanPhone.length < 9) {
+      setError('Por favor, informe um número de celular válido (ex: 841234567)')
+      setIsProcessing(false)
+      return
+    }
+
     try {
-      // Pagamento via vendorapay.com
+      // Pagamento via Paymoz (M-Pesa)
       const paymentData = {
-        amount: COURSE_CONFIG.amount, // 299 MZN (valor direto)
-        context: COURSE_CONFIG.description,
-        callbackUrl: SYSTEM_URLS.callbackUrl,
-        returnUrl: SYSTEM_URLS.returnUrl,
-        currency: 'MZN',
-        environment: 'prod',
-        // Incluir dados do usuário para identificação no webhook
-        userId: currentUser.uid,
-        userEmail: currentUser.email
+        metodo: 'mpesa',
+        valor: COURSE_CONFIG.amount.toString(), // "299.00" como string
+        numero_celular: phoneNumber,
+        referencia_externa: `curso-${currentUser.uid}-${Date.now()}` // Referência única
       }
 
       const result = await createPayment(paymentData)
@@ -55,8 +66,17 @@ const Payment = () => {
         // Registrar transação com usuário para identificação no webhook
         await registerTransactionUser(result.transactionId, currentUser.uid, currentUser.email)
         
-        // Redirecionar para o checkout da vendorapay.com
-        window.location.href = result.redirectUrl
+        // Mostrar mensagem de sucesso e instruções
+        alert(`Pagamento iniciado com sucesso!\n\n${result.message}\n\nPor favor, confirme o pagamento no seu celular via M-Pesa.\n\nVocê será redirecionado para a página de confirmação.`)
+        
+        // Redirecionar para página de sucesso com dados da transação
+        navigate('/payment-success', {
+          state: {
+            transactionId: result.transactionId,
+            amount: COURSE_CONFIG.amount,
+            message: result.message
+          }
+        })
       } else {
         setError(result.error || 'Erro ao criar pagamento. Tente novamente.')
       }
@@ -155,20 +175,47 @@ const Payment = () => {
                             <p className="font-medium text-gray-900">{userProfile?.name || currentUser.email}</p>
                             <p className="text-sm text-gray-600">{currentUser.email}</p>
                           </div>
-                  </div>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Campo de Número de Celular */}
+                    <div className="mb-6">
+                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                        Número de Celular (M-Pesa) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="tel"
+                          id="phoneNumber"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder="841234567"
+                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          disabled={isProcessing}
+                          required
+                        />
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Digite o número do celular registrado no M-Pesa (ex: 841234567)
+                      </p>
                     </div>
 
                     {/* Informações do Pagamento */}
                     <div className="mb-6">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center space-x-3">
-                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                           <div>
-                            <p className="font-medium text-blue-900">Pagamento Seguro</p>
-                            <p className="text-sm text-blue-700">Processado através de Pagamento Seguro</p>
+                            <p className="font-medium text-green-900">Pagamento via M-Pesa</p>
+                            <p className="text-sm text-green-700">Você receberá uma notificação no celular para confirmar o pagamento</p>
                           </div>
                         </div>
                       </div>
@@ -188,18 +235,18 @@ const Payment = () => {
 
                   {/* Botão de Pagamento */}
                   <BotaoCTA
-                      onClick={handlePayment}
-                      disabled={isProcessing}
+                    onClick={handlePayment}
+                    disabled={isProcessing || !phoneNumber.trim()}
                     fullWidth
                     size="large"
-                    animated={!isProcessing}
+                    animated={!isProcessing && phoneNumber.trim()}
                     variant="gradient"
-                    className={isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
+                    className={isProcessing || !phoneNumber.trim() ? 'opacity-50 cursor-not-allowed' : ''}
                   >
                     {isProcessing ? (
-                        <ButtonSpinner color="white" />
+                      <ButtonSpinner color="white" />
                     ) : (
-                        `Finalizar Compra - ${formatAmount(COURSE_CONFIG.amount, 'MZN')}`
+                      `Pagar com M-Pesa - ${formatAmount(COURSE_CONFIG.amount, 'MZN')}`
                     )}
                   </BotaoCTA>
 
@@ -366,7 +413,7 @@ const Payment = () => {
 
       {/* Botão Flutuante do WhatsApp */}
       <motion.a
-        href="https://wa.me/25887400696"
+        href="https://wa.me/258874006962"
         target="_blank"
         rel="noopener noreferrer"
         initial={{ scale: 0 }}

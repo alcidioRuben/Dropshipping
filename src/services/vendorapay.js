@@ -1,7 +1,7 @@
-// Serviço para integração com vendorapay.com
-const VENDORAPAY_API_BASE = 'https://vendorapay.com/api'
-const API_KEY = '03gdpgmaoh6o46m7pqg3v8d6ggecik8p68dyou7zvvwvr8qjclms5mprowv9'
-const WEBHOOK_SECRET = 'hmthkoukhk5z47jul0nvys68h9ihyglykt43iokjtck0sn6nx37ghkd3qwlr5emo8zrx73nxbrmuvw0xukb8qidque9ztz7ru9uys2srvh8sc0ihukn0wsd0'
+// Serviço para integração com Paymoz (paymoz.tech)
+const PAYMOZ_API_BASE = 'https://paymoz.tech/api/v1'
+// API Key deve ser configurada via variável de ambiente
+const API_KEY = import.meta.env.VITE_PAYMOZ_API_KEY || '2abc1e2f-4d13-4c68-8504-66ab1b64310e'
 
 // Configurações padrão
 const DEFAULT_CONFIG = {
@@ -10,56 +10,87 @@ const DEFAULT_CONFIG = {
 }
 
 /**
- * Criar uma transação de pagamento
+ * Criar uma transação de pagamento via Paymoz (M-Pesa)
  * @param {Object} paymentData - Dados do pagamento
- * @param {number} paymentData.amount - Valor em centavos
- * @param {string} paymentData.context - Descrição do pagamento
- * @param {string} paymentData.callbackUrl - URL do webhook
- * @param {string} paymentData.returnUrl - URL de retorno
- * @param {string} [paymentData.currency='MZN'] - Moeda
- * @param {string} [paymentData.environment='prod'] - Ambiente
+ * @param {string} paymentData.valor - Valor como string (ex: "299.00")
+ * @param {string} paymentData.numero_celular - Número de celular do cliente (ex: "841234567")
+ * @param {string} [paymentData.referencia_externa] - Referência externa (opcional)
+ * @param {string} [paymentData.metodo='mpesa'] - Método de pagamento (padrão: 'mpesa')
  * @returns {Promise<Object>} Resposta da API
  */
 export const createPayment = async (paymentData) => {
   try {
-    const payload = {
-      amount: paymentData.amount,
-      context: paymentData.context,
-      callbackUrl: paymentData.callbackUrl,
-      returnUrl: paymentData.returnUrl,
-      currency: paymentData.currency || DEFAULT_CONFIG.currency,
-      environment: paymentData.environment || DEFAULT_CONFIG.environment,
-      // Adicionar metadados do usuário se disponível
-      ...(paymentData.userId && { userId: paymentData.userId }),
-      ...(paymentData.userEmail && { userEmail: paymentData.userEmail })
+    // Validar parâmetros obrigatórios
+    if (!paymentData.valor) {
+      throw new Error('O campo valor é obrigatório')
+    }
+    if (!paymentData.numero_celular) {
+      throw new Error('O campo numero_celular é obrigatório')
     }
 
-    const response = await fetch(`${VENDORAPAY_API_BASE}/payment/create`, {
+    // Formatar número de celular (remover espaços e caracteres especiais)
+    const numeroCelular = paymentData.numero_celular.replace(/\D/g, '')
+
+    const payload = {
+      metodo: paymentData.metodo || 'mpesa',
+      valor: paymentData.valor,
+      numero_celular: numeroCelular,
+      ...(paymentData.referencia_externa && { referencia_externa: paymentData.referencia_externa })
+    }
+
+    const response = await fetch(`${PAYMOZ_API_BASE}/pagamentos/processar/`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'apiKey': API_KEY
+        'Authorization': `ApiKey ${API_KEY}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-    }
-
     const data = await response.json()
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Erro ao criar pagamento')
+
+    // Tratar diferentes códigos de status HTTP
+    if (response.status === 401) {
+      throw new Error(data.detail || 'API Key inválida ou não encontrada')
     }
 
-    return {
-      success: true,
-      redirectUrl: data.redirectUrl,
-      transactionId: data.id,
-      data: data
+    if (response.status === 403) {
+      throw new Error(data.detail || 'Você não tem permissão para realizar esta ação')
     }
+
+    if (response.status === 400) {
+      throw new Error(data.erro || 'Requisição inválida. Verifique os dados enviados.')
+    }
+
+    if (response.status === 500) {
+      throw new Error(data.erro || 'Erro interno do servidor. Tente novamente mais tarde.')
+    }
+
+    if (!response.ok) {
+      throw new Error(data.erro || data.detail || `HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    // Verificar se a resposta indica sucesso
+    if (data.sucesso === false) {
+      throw new Error(data.erro || 'Erro ao processar pagamento')
+    }
+
+    // Se chegou aqui, o pagamento foi processado com sucesso
+    if (data.sucesso === true && data.dados) {
+      return {
+        success: true,
+        transactionId: data.dados.output_TransactionID,
+        conversationId: data.dados.output_ConversationID,
+        thirdPartyReference: data.dados.output_ThirdPartyReference,
+        responseCode: data.dados.output_ResponseCode,
+        responseDesc: data.dados.output_ResponseDesc,
+        message: data.mensagem || 'Pagamento processado com sucesso',
+        data: data.dados
+      }
+    }
+
+    // Fallback para estrutura de resposta não esperada
+    throw new Error('Resposta da API em formato inesperado')
   } catch (error) {
     console.error('Erro ao criar pagamento:', error)
     return {
@@ -71,28 +102,23 @@ export const createPayment = async (paymentData) => {
 
 /**
  * Verificar status de uma transação
+ * Nota: A API Paymoz pode não ter endpoint de verificação de status.
+ * Esta função mantém compatibilidade com o código existente.
  * @param {string} transactionId - ID da transação
  * @returns {Promise<Object>} Status da transação
  */
 export const getTransactionStatus = async (transactionId) => {
   try {
-    const response = await fetch(`${VENDORAPAY_API_BASE}/payment/status/${transactionId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'X-API-Key': API_KEY
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const data = await response.json()
+    // Nota: A API Paymoz pode não ter um endpoint de verificação de status
+    // Por enquanto, retornamos um status genérico
+    // Você pode implementar verificação via webhook ou outro método
+    console.warn('Verificação de status não disponível na API Paymoz. Use webhooks para confirmar pagamentos.')
+    
     return {
       success: true,
-      status: data.status,
-      data: data
+      status: 'pending', // Status pendente até confirmação via webhook
+      transactionId: transactionId,
+      message: 'Status deve ser verificado via webhook'
     }
   } catch (error) {
     console.error('Erro ao verificar status:', error)
@@ -122,23 +148,34 @@ export const verifyWebhookSignature = (payload, signature) => {
 }
 
 /**
- * Processar webhook de pagamento
+ * Processar webhook de pagamento da Paymoz
  * @param {Object} webhookData - Dados do webhook
  * @returns {Object} Resultado do processamento
  */
 export const processWebhook = (webhookData) => {
   try {
-    const {
-      transactionId,
-      status,
-      amount,
-      currency,
-      context,
-      timestamp
-    } = webhookData
-
+    // A estrutura do webhook da Paymoz pode variar
+    // Adaptar conforme a documentação real da Paymoz
+    const transactionId = webhookData.output_TransactionID || 
+                         webhookData.transactionId || 
+                         webhookData.transaction_id
+    
+    const status = webhookData.status || 
+                   webhookData.output_ResponseCode || 
+                   'unknown'
+    
+    const amount = webhookData.amount || 
+                  webhookData.valor || 
+                  webhookData.value
+    
+    const currency = webhookData.currency || 'MZN'
+    
     // Verificar se o pagamento foi aprovado
-    const isApproved = status === 'approved' || status === 'completed'
+    // Paymoz retorna "INS-0" para sucesso
+    const isApproved = status === 'INS-0' || 
+                      status === 'approved' || 
+                      status === 'completed' ||
+                      webhookData.sucesso === true
     
     return {
       success: true,
@@ -146,8 +183,8 @@ export const processWebhook = (webhookData) => {
       status,
       amount,
       currency,
-      context,
-      timestamp,
+      context: webhookData.context || 'Curso de Dropshipping',
+      timestamp: webhookData.timestamp || new Date().toISOString(),
       isApproved,
       data: webhookData
     }
@@ -162,17 +199,21 @@ export const processWebhook = (webhookData) => {
 
 /**
  * Formatar valor para exibição
- * @param {number} amount - Valor em centavos
+ * @param {number|string} amount - Valor (pode ser número ou string)
  * @param {string} currency - Moeda
  * @returns {string} Valor formatado
  */
 export const formatAmount = (amount, currency = 'MZN') => {
+  // Converter para número se for string
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount
+  
   // Se o valor for menor que 1000, assume que já está em unidades
-  const value = amount < 1000 ? amount : amount / 100
+  const displayValue = value < 1000 ? value : value / 100
+  
   return new Intl.NumberFormat('pt-MZ', {
     style: 'currency',
     currency: currency
-  }).format(value)
+  }).format(displayValue)
 }
 
 /**
@@ -213,6 +254,10 @@ export const SYSTEM_URLS = {
   
   get cancelUrl() {
     return `${this.base}/payment`
+  },
+  
+  get webhookUrl() {
+    return `${this.base}/api/webhook/paymoz`
   }
 }
 
@@ -240,9 +285,9 @@ export const registerTransactionUser = async (transactionId, userId, userEmail) 
   
   // Armazenar no localStorage como backup
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('paymoz_transactions') || '{}')
     existingTransactions[transactionId] = transactionData
-    localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
+    localStorage.setItem('paymoz_transactions', JSON.stringify(existingTransactions))
   } catch (error) {
     console.error('Erro ao salvar transação no localStorage:', error)
   }
@@ -286,7 +331,7 @@ export const getTransactionUser = (transactionId) => {
   // Se não encontrar na memória, tentar do localStorage
   if (!transactionData) {
     try {
-      const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
+      const existingTransactions = JSON.parse(localStorage.getItem('paymoz_transactions') || '{}')
       transactionData = existingTransactions[transactionId]
       
       // Se encontrar no localStorage, restaurar na memória
@@ -311,9 +356,9 @@ export const clearTransactionUser = (transactionId) => {
   
   // Remover do localStorage
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('paymoz_transactions') || '{}')
     delete existingTransactions[transactionId]
-    localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
+    localStorage.setItem('paymoz_transactions', JSON.stringify(existingTransactions))
   } catch (error) {
     console.error('Erro ao limpar transação do localStorage:', error)
   }
@@ -324,7 +369,7 @@ export const clearTransactionUser = (transactionId) => {
  */
 export const clearOldTransactions = () => {
   try {
-    const existingTransactions = JSON.parse(localStorage.getItem('vendorapay_transactions') || '{}')
+    const existingTransactions = JSON.parse(localStorage.getItem('paymoz_transactions') || '{}')
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     
     let cleanedCount = 0
@@ -338,7 +383,7 @@ export const clearOldTransactions = () => {
     })
     
     if (cleanedCount > 0) {
-      localStorage.setItem('vendorapay_transactions', JSON.stringify(existingTransactions))
+      localStorage.setItem('paymoz_transactions', JSON.stringify(existingTransactions))
       console.log(`🧹 Limpeza: ${cleanedCount} transações antigas removidas`)
     }
   } catch (error) {
