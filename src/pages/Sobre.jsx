@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useInView, useAnimation } from 'framer-motion';
-import metaPixelService from '../services/metaPixel';
+import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds';
 
 const Sobre = () => {
   const ref = useRef(null);
@@ -17,6 +18,11 @@ const Sobre = () => {
   // Meta Pixel - Rastrear visualização da página sobre
   useEffect(() => {
     metaPixelService.trackAboutPageView();
+    googleAdsService.trackPageView('/sobre');
+    googleAdsService.trackEvent('page_view', {
+      'page_title': 'Sobre - Curso de Dropshipping',
+      'page_location': window.location.href
+    });
   }, []);
 
   const containerVariants = {
@@ -101,7 +107,7 @@ const Sobre = () => {
             className="max-w-4xl mx-auto"
           >
             <motion.h1 variants={itemVariants} className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Sobre a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">LacasaDigital</span>
+              Sobre a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">AMSync</span>
             </motion.h1>
             <motion.p variants={itemVariants} className="text-xl text-gray-600 mb-8 leading-relaxed">
               Somos uma plataforma educacional comprometida em transformar sonhos em realidade através do conhecimento em dropshipping e empreendedorismo digital.

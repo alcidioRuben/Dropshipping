@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PageLoadingSpinner } from '../components/LoadingSpinner';
 import metaPixelService from '../services/metaPixel';
+import googleAdsService from '../services/googleAds';
 
 const Dashboard = () => {
   const { currentUser, userProfile, saveCourseProgress, loadCourseProgress } = useAuth();
@@ -292,6 +293,11 @@ const Dashboard = () => {
   // Meta Pixel - Rastrear visualização do dashboard
   useEffect(() => {
     metaPixelService.trackDashboardView();
+    googleAdsService.trackPageView('/dashboard');
+    googleAdsService.trackEvent('page_view', {
+      'page_title': 'Dashboard - Curso de Dropshipping',
+      'page_location': window.location.href
+    });
   }, [])
 
   if (isLoading) {

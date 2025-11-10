@@ -6,6 +6,7 @@ import { validateLoginForm, validateRegistrationForm, sanitizeInput } from '../u
 import { ButtonSpinner } from '../components/LoadingSpinner'
 import BotaoCTA from '../components/BotaoCTA'
 import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds'
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -29,9 +30,14 @@ const Login = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Meta Pixel - Rastrear visualização da página de login
+  // Meta Pixel e Google Ads - Rastrear visualização da página de login
   useEffect(() => {
     metaPixelService.trackLoginStart();
+    googleAdsService.trackPageView('/login');
+    googleAdsService.trackEvent('page_view', {
+      'page_title': 'Login - Curso de Dropshipping',
+      'page_location': window.location.href
+    });
   }, []);
 
   // Redirecionar usuários já logados para o Dashboard
@@ -84,8 +90,11 @@ const Login = () => {
 
       if (isLogin) {
         const result = await login(formData.email, formData.password)
-        // Meta Pixel - Rastrear login bem-sucedido
+        // Meta Pixel e Google Ads - Rastrear login bem-sucedido
         metaPixelService.trackLoginSuccess();
+        googleAdsService.trackEvent('login', {
+          'method': 'email'
+        });
         // Aguardar um momento para o perfil carregar
         setTimeout(() => {
           // Sempre redirecionar para dashboard após login bem-sucedido
@@ -93,8 +102,9 @@ const Login = () => {
         }, 1000)
       } else {
         await register(formData.email, formData.password, formData.name)
-        // Meta Pixel - Rastrear registro bem-sucedido
+        // Meta Pixel e Google Ads - Rastrear registro bem-sucedido
         metaPixelService.trackLoginSuccess();
+        googleAdsService.trackRegistration('email');
         // Após registro, vai para pagamento
         navigate('/payment')
       }
@@ -110,8 +120,12 @@ const Login = () => {
       setIsLoading(true)
       setError('')
       await loginWithGoogle()
-      // Meta Pixel - Rastrear login com Google bem-sucedido
+      // Meta Pixel e Google Ads - Rastrear login com Google bem-sucedido
       metaPixelService.trackLoginSuccess();
+      googleAdsService.trackEvent('login', {
+        'method': 'google'
+      });
+      googleAdsService.trackRegistration('google');
       // Aguardar um momento para o perfil carregar
       setTimeout(() => {
         // Sempre redirecionar para dashboard após login com Google

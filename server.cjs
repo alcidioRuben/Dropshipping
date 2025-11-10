@@ -294,8 +294,8 @@ app.get('*', (req, res) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/webhook/vendorapay`);
-  console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📥 Webhook endpoint: http://localhost:${PORT}/api/webhook/paymoz`);
+  console.log(`💚 Health check: http://localhost:${PORT}/api/health`);
 });
 
 module.exports = app;

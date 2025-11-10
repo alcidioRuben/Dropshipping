@@ -6,6 +6,7 @@ import { createPayment, COURSE_CONFIG, SYSTEM_URLS, formatAmount, registerTransa
 import { ButtonSpinner } from '../components/LoadingSpinner'
 import BotaoCTA from '../components/BotaoCTA'
 import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds'
 import '../styles/animations.css'
 
 const Payment = () => {
@@ -22,9 +23,11 @@ const Payment = () => {
     }
   }, [currentUser, userProfile, navigate])
 
-  // Meta Pixel - Rastrear visualização da página de pagamento
+  // Meta Pixel e Google Ads - Rastrear visualização da página de pagamento
   useEffect(() => {
     metaPixelService.trackPaymentStart();
+    googleAdsService.trackPageView('/payment');
+    googleAdsService.trackInitiateCheckout(299, 'MZN');
   }, [])
 
   const handlePayment = async () => {
@@ -65,6 +68,13 @@ const Payment = () => {
       if (result.success) {
         // Registrar transação com usuário para identificação no webhook
         await registerTransactionUser(result.transactionId, currentUser.uid, currentUser.email)
+        
+        // Google Ads - Rastrear início do checkout
+        googleAdsService.trackEvent('begin_checkout', {
+          'value': COURSE_CONFIG.amount,
+          'currency': 'MZN',
+          'transaction_id': result.transactionId
+        });
         
         // Mostrar mensagem de sucesso e instruções
         alert(`Pagamento iniciado com sucesso!\n\n${result.message}\n\nPor favor, confirme o pagamento no seu celular via M-Pesa.\n\nVocê será redirecionado para a página de confirmação.`)

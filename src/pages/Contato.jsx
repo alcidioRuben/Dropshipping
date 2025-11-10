@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import metaPixelService from '../services/metaPixel';
+import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds';
 
 const Contato = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,11 @@ const Contato = () => {
   // Meta Pixel - Rastrear visualização da página de contato
   useEffect(() => {
     metaPixelService.trackContactPageView();
+    googleAdsService.trackPageView('/contato');
+    googleAdsService.trackEvent('page_view', {
+      'page_title': 'Contato - Curso de Dropshipping',
+      'page_location': window.location.href
+    });
   }, []);
 
   const handleChange = (e) => {
@@ -36,6 +42,9 @@ const Contato = () => {
     
     setIsSubmitting(false);
     setSubmitSuccess(true);
+    
+    // Google Ads - Rastrear envio de formulário
+    googleAdsService.trackFormSubmit('Formulário de Contato');
     
     // Reset form after 3 seconds
     setTimeout(() => {

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { PageLoadingSpinner } from '../components/LoadingSpinner'
 import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds'
 
 const Recursos = () => {
   const { currentUser, userProfile, saveCourseProgress, loadCourseProgress } = useAuth()
@@ -108,6 +109,11 @@ const Recursos = () => {
   // Meta Pixel - Rastrear visualização da página de recursos
   useEffect(() => {
     metaPixelService.trackResourcesPageView();
+    googleAdsService.trackPageView('/recursos');
+    googleAdsService.trackEvent('page_view', {
+      'page_title': 'Recursos - Curso de Dropshipping',
+      'page_location': window.location.href
+    });
   }, [])
 
   if (isLoading) {

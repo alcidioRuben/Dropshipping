@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { getTransactionUser, getTransactionStatus, clearTransactionUser, clearOldTransactions } from '../services/vendorapay'
 import metaPixelService from '../services/metaPixel'
+import googleAdsService from '../services/googleAds'
 
 const PaymentSuccess = () => {
   const location = useLocation()
@@ -78,8 +79,9 @@ const PaymentSuccess = () => {
                   context: 'Curso Completo de Dropshipping'
                 })
 
-                // Meta Pixel - Rastrear compra bem-sucedida
+                // Meta Pixel e Google Ads - Rastrear compra bem-sucedida
                 metaPixelService.trackPurchase(transactionId)
+                googleAdsService.trackPurchase(transactionId, 299, 'MZN')
                 
                 console.log('✅ Status do usuário atualizado - pagamento assumido como concluído')
                 
@@ -120,6 +122,11 @@ const PaymentSuccess = () => {
 
     console.log('✅ Dados de pagamento encontrados:', paymentData)
     setIsCheckingPayment(false)
+    
+    // Se o usuário já pagou, rastrear conversão
+    if (userProfile?.isPaid && paymentData.transactionId) {
+      googleAdsService.trackPurchase(paymentData.transactionId, paymentData.amount || 299, 'MZN')
+    }
 
     // Contagem regressiva
     const countdownInterval = setInterval(() => {
@@ -137,6 +144,10 @@ const PaymentSuccess = () => {
       // Verificar se usuário pagou antes de redirecionar
       if (userProfile?.isPaid) {
         console.log('✅ Pagamento confirmado, redirecionando para Dashboard')
+        // Rastrear conversão se tiver transactionId
+        if (paymentData.transactionId) {
+          googleAdsService.trackPurchase(paymentData.transactionId, paymentData.amount || 299, 'MZN')
+        }
         navigate('/dashboard', { replace: true })
       } else {
         console.log('❌ Pagamento não confirmado, redirecionando para recursos')
