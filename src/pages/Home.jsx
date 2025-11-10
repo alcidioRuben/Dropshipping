@@ -320,6 +320,7 @@ const Home = () => {
                     metaPixelService.trackCTAClick('Quero começar agora', 'Hero Section');
                     googleAdsService.trackCTAClick('Quero começar agora', 'Hero Section');
                     googleAdsService.trackInitiateCheckout(299, 'MZN');
+                    googleAdsService.trackConversion();
                   }}
                 >
                   Quero começar agora
@@ -714,6 +715,7 @@ const Home = () => {
                   metaPixelService.trackCTAClick('Começar Agora', 'Pricing Section');
                   googleAdsService.trackCTAClick('Começar Agora', 'Pricing Section');
                   googleAdsService.trackInitiateCheckout(299, 'MZN');
+                  googleAdsService.trackConversion();
                 }}
               >
                 Começar Agora
@@ -751,6 +753,7 @@ const Home = () => {
                 metaPixelService.trackCTAClick('Quero começar agora', 'Final CTA');
                 googleAdsService.trackCTAClick('Quero começar agora', 'Final CTA');
                 googleAdsService.trackInitiateCheckout(299, 'MZN');
+                googleAdsService.trackConversion();
               }}
             >
               Quero começar agora
@@ -771,6 +774,7 @@ const Home = () => {
         onClick={() => {
           metaPixelService.trackWhatsAppClick();
           googleAdsService.trackWhatsAppClick();
+          googleAdsService.trackConversion();
         }}
       >
         <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">

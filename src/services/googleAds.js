@@ -229,6 +229,41 @@ class GoogleAdsService {
       'value': seconds
     })
   }
+
+  /**
+   * Relatar conversão de clique (equivalente ao gtag_report_conversion)
+   * @param {string} [targetUrl] URL para redirecionar após callback (opcional)
+   * @param {Function} [navigateFn] Função de navegação (ex.: navigate('/rota'))
+   */
+  reportClickConversion(targetUrl, navigateFn) {
+    if (!this.isAvailable()) {
+      console.warn('⚠️ Google Ads não disponível para reportClickConversion')
+      if (typeof navigateFn === 'function') navigateFn();
+      else if (targetUrl) window.location = targetUrl;
+      return false;
+    }
+
+    const callback = () => {
+      if (typeof navigateFn === 'function') {
+        navigateFn();
+      } else if (typeof targetUrl === 'string' && targetUrl.length > 0) {
+        window.location = targetUrl;
+      }
+    };
+
+    try {
+      window.gtag('event', 'conversion', {
+        'send_to': `${this.conversionId}/${this.conversionLabel}`,
+        'event_callback': callback
+      });
+      console.log('✅ Conversão de clique reportada');
+      return false; // manter compatível com exemplos do Google
+    } catch (error) {
+      console.error('❌ Erro no reportClickConversion:', error);
+      callback();
+      return false;
+    }
+  }
 }
 
 // Exportar instância única (Singleton)
